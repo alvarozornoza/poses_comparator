@@ -40,6 +40,7 @@ CFakeKinectDriver::CFakeKinectDriver(const std::string& path)
     m_DepthPath <<path <<"/"<<FAKE_KINECT_DEPTH_DIRECTORY<<"/";
     m_LastError = FAKE_KINECT_NO_ERROR;
     m_FramesNumber = 0;
+    cerr<<"[SUCESSFULL] CFakeKinectDriver was constructed\n";
     
 }
 CFakeKinectDriver::~CFakeKinectDriver()
@@ -56,20 +57,24 @@ int32 CFakeKinectDriver::OpenDevice()
     //sync file exist
     m_LastError = FileExist(m_TextFilePath.str());
     FAKE_KINECT_CHECK_LAST_ERROR
+    cerr<<"[SUCESSFULL] TextFile\n";
     
     //rgb directory exist
     m_LastError = DirectoryExist(m_RgbPath.str());
     FAKE_KINECT_CHECK_LAST_ERROR
+    cerr<<"[SUCESSFULL] RGBPath\n";
     
     //deph directory exist
     m_LastError = DirectoryExist(m_DepthPath.str());
     FAKE_KINECT_CHECK_LAST_ERROR
+    cerr<<"[SUCESSFULL] DepthPath\n";
     
     //parse a line and try to open the first file in the sequence
     m_Stream.close();
     m_Stream.open(m_TextFilePath.str().c_str());
     m_LastError = ExtractImagesAndCameraPos();
     FAKE_KINECT_CHECK_LAST_ERROR
+    cerr<<"[SUCESSFULL] Parsing first file\n";
     
     //rewind
     m_Stream.seekg(0);
@@ -167,7 +172,6 @@ int32 CFakeKinectDriver::ReadLine(std::ifstream & file_stream_, char8* output, i
     assert(output != NULL);
     
     file_stream_.getline(output, max_size_line);
-    
     if(strlen(output) <=0 )
     {
         return FAKE_KINECT_END_OF_FILE_REACHED;

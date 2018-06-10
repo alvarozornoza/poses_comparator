@@ -24,7 +24,9 @@
 #include <sstream>
 #include <fstream>
 #include <highgui.h> //opencv2/highgui/highgui.hpp
-#include <cv.h>
+#include <stdio.h>
+#include <opencv2/opencv.hpp>
+
 
 #ifdef USE_FAKE_KINECT
 
