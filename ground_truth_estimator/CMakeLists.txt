@@ -29,6 +29,7 @@ file(
 	src/core/*.h	
 	src/*.cpp
 	src/*.h
+	src/nlohmann/*.hpp
     )
 
 #generate executable from source files
