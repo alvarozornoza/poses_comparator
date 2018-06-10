@@ -26,14 +26,13 @@ using json = nlohmann::json;
 #define ROBONECT_CAMERA_CX      322.515987
 #define ROBONECT_CAMERA_CY      259.055966
 
-
-
 #define K1  5.858325e-02
 #define K2  3.856792e-02
 #define P1  0
 #define P2  0
 #define K3  0
 
+#define ARRAY_SIZE(array) (sizeof((array))/sizeof((array[0])))
 
 /** homogeneous transformation matrix between Qualisys and kinect*/
 cv::Mat transformationMatrix;
@@ -89,6 +88,10 @@ struct vec3f
                      this->y - oth.y,
                      this->z - oth.z);
     }
+    bool exists()
+    {
+        return (((this->x)>0.0) && ((this->y)>0.0) && ((this->z)>0.0));
+    }
 
     float length()
     {
@@ -103,7 +106,6 @@ struct vec3f
 
     }
 };
-
 
 /** struct that holds different marker positions*/
 struct Markers
@@ -132,10 +134,6 @@ struct Markers
     vec3f rightKnee;
     vec3f rightFoot;
 };
-
-
-
-
 
 /** convert opencv vector to vec3 format*/
 vec3f opencvVecToVec3(const Mat& vert)
@@ -242,8 +240,6 @@ void convertDepthFrom16UC1To32FC1(const cv::Mat& input, cv::Mat& output, float s
 */
 void scanMarkerFromString(Markers& marker, double &index, char* line)
 {
-
-
     sscanf(line,
            "%lf\t%lf\t\
            %f\t%f\t%f\t\
@@ -334,38 +330,77 @@ void printMarkerToString(Markers& marker, char* string, double timestampD, doubl
            );
 }
 
+int getJointIndex(std::string &Joint)
+{
+    std::vector<std::string> joints = {"torso", "head", "leftShoulder", "leftElbow", "leftHand", "rightShoulder",
+     "rightElbow", "rightHand", "neck", "leftHip", "leftKnee", "leftFoot", "rightHip", "rightKnee", "rightFoot"};
+    return find(joints.begin(), joints.end(), Joint) - joints.begin();
+}
+
+template <size_t rows, size_t cols>
+void getIndexes(int(&array)[rows][cols])
+{
+    std::string connectedJointsStrings[][2] = {
+    {"head", "neck"},
+    {"neck","torso"},
+    {"leftShoulder", "neck"},
+    {"leftElbow", "leftShoulder"},
+    {"leftElbow", "leftHand"},
+    {"leftHip", "torso"},
+    {"leftHip", "leftKnee"},
+    {"leftKnee", "leftFoot"},
+    {"rightShoulder", "neck"},
+    {"rightElbow", "rightShoulder"},
+    {"rightElbow", "rightHand"},
+    {"rightHip", "torso"},
+    {"rightHip", "rightKnee"},
+    {"rightKnee", "rightFoot"},
+    {"leftShoulder", "rightShoulder"}
+    };
+    for(int i=0;i<rows;i++)
+    {
+        for(int j=0;j<cols;j++)
+        {
+            array[i][j] = getJointIndex(connectedJointsStrings[i][j]);
+        }
+    }
+}
+
+void ptsPushBack(Markers& marker, std::vector<vec3f>& pts)
+{
+    pts.push_back(marker.torso);
+    pts.push_back(marker.head);
+    pts.push_back(marker.leftShoulder);
+    pts.push_back(marker.leftElbow);
+    pts.push_back(marker.leftHand);
+    pts.push_back(marker.rightShoulder);
+    pts.push_back(marker.rightElbow);
+    pts.push_back(marker.rightHand);
+    pts.push_back(marker.neck);
+    pts.push_back(marker.leftHip);
+    pts.push_back(marker.leftKnee);
+    pts.push_back(marker.LeftFoot);
+    pts.push_back(marker.rightHip);
+    pts.push_back(marker.rightKnee);
+    pts.push_back(marker.rightFoot);
+}
+
 /** display marker position on a opencv image. markers are displayed as circles
     @param the marker to display on the image
     @param image the opencv image where the marker will be displayed on
     @param transformation the transformation matrix that project the marker positions from the Qualisys coordinate system to the camera coordinate system (obtained by rigid calibration)
     */
-void displayPose(Markers& marker, cv::Mat& image, const cv::Mat& transformation)
+
+void displayPose(std::vector<vec3f>& pts, cv::Mat& image, const cv::Mat& transformation)
 {
-    std::vector<vec3f> pts;
-    pts.push_back(marker.torso);
+    int connectedJointIndices[14][2];
+    getIndexes(connectedJointIndices);
 
-    pts.push_back(marker.head);
-    pts.push_back(marker.leftShoulder);
-    pts.push_back(marker.leftElbow);
-    pts.push_back(marker.leftHand);
+    //cerr<<connectedJointIndices[0][0]<<"and"<<connectedJointIndices[0][1]<<"\n";
 
-    pts.push_back(marker.rightShoulder);
-    pts.push_back(marker.rightElbow);
-    pts.push_back(marker.rightHand);
-    pts.push_back(marker.neck);
-
-
-    pts.push_back(marker.leftHip);
-    pts.push_back(marker.leftKnee);
-    pts.push_back(marker.LeftFoot);
-
-    pts.push_back(marker.rightHip);
-    pts.push_back(marker.rightKnee);
-    pts.push_back(marker.rightFoot);
-
-
-
-
+    int colors[18][3] = {{255, 0, 0}, {255, 85, 0}, {255, 170, 0}, {255, 255, 0}, {170, 255, 0}, {85, 255, 0}, {0, 255, 0}, 
+          {0, 255, 85}, {0, 255, 170}, {0, 255, 255}, {0, 170, 255}, {0, 85, 255}, {0, 0, 255}, {85, 0, 255}, 
+          {170, 0, 255}, {255, 0, 255}, {255, 0, 170}, {255, 0, 85}};
 
 
     for(int i = 0; i < pts.size();i++)
@@ -373,8 +408,26 @@ void displayPose(Markers& marker, cv::Mat& image, const cv::Mat& transformation)
         Mat pt = vec3fToOpencv(pts[i]);
         Mat transformedPt = transformation * pt;
         Point2i pixel = project3DPoint(transformedPt);
-        cv::circle(image, pixel, 5,  Scalar( 0, 255, 0 ), 1, 8);
+        cv::circle(image, pixel, 5,  Scalar(colors[i][0], colors[i][1], colors[i][2] ), -1, 8);
     }
+    for(int i = 0; i < 15; i++)
+    {
+        int indices[2];
+        indices[0] = connectedJointIndices[i][0];
+        indices[1] = connectedJointIndices[i][1];
+        if(pts[indices[0]].exists() && pts[indices[1]].exists())
+        {
+            Mat pt1 = vec3fToOpencv(pts[indices[0]]);
+            Mat transformedPt1 = transformation * pt1;
+            Point2i pixel1 = project3DPoint(transformedPt1);
+            Mat pt2 = vec3fToOpencv(pts[indices[1]]);
+            Mat transformedPt2 = transformation * pt2;
+            Point2i pixel2 = project3DPoint(transformedPt2);
+            cv::line(image, pixel1, pixel2, Scalar(colors[i][0], colors[i][1], colors[i][2]));
+        }
+    }
+    cv::imshow("image", image);
+}
 
 json generateJSON(std::vector<vec3f>& pts, const cv::Mat& transformation, int indexImage)
 {
@@ -431,7 +484,6 @@ Mat GetTransformationBetweenKinectAndGroundTruth()
     return transform;
 }
 
-
 /** play a sequence. this function parse marker positions from groundTruth.txt file and display them on the corresponding synchronized rgb image of the kinect
     @param path the directory path of the sequence
     */
@@ -459,6 +511,7 @@ int playSequence(const std::string &path)
     }
 
     CFakeKinectDriver driver(path);
+    cerr<<driver.OpenDevice();
     if(driver.OpenDevice() != FAKE_KINECT_NO_ERROR)
     {
         cerr<<"[ERROR] could not open fake kinect device.. job canceled\n";
@@ -495,6 +548,9 @@ int playSequence(const std::string &path)
         gt.getline(line, 1024);
         setlocale(LC_NUMERIC, "C");
         scanMarkerFromString(marker, index, line);
+        std::vector<vec3f> pts;
+        ptsPushBack(marker, pts);
+        displayPose(pts, rgb_indDisplay, transformationMatrix);
         json skeleton;
         skeleton = generateJSON(pts ,transformationMatrix, indexImage);
         skeletonsData[indexImage] = skeleton;
@@ -506,6 +562,11 @@ int playSequence(const std::string &path)
             cerr<<"[INFO] process canceled by user"<<endl;
             break;
         }
+        if(key == 'p')
+        {
+            cerr<<"[INFO] process paused by user. Press any key to continue"<<endl;
+            cv::waitKey(0);
+        }
         indexImage++;
 
     }
@@ -514,8 +575,6 @@ int playSequence(const std::string &path)
     cerr<<"[SUCCESS] finished playing '"<<path<<"' sequence."<<endl;
     return 0;
 }
-
-
 
 int main(int argc, char** argv)
 {
@@ -530,12 +589,11 @@ int main(int argc, char** argv)
 
 
     //2. play the sequence and project marker positions on the corresponding image
-    std::vector<string> sequences;
-    sequences.push_back("/home/dibabdal/Bureau/MySpace/INRIA/testDevs/calibOpencv/sequences/abdallah2BodyWalk1/");
+    //std::vector<string> sequences;
+    //sequences.push_back("/home/dibabdal/Bureau/MySpace/INRIA/testDevs/calibOpencv/sequences/abdallah2BodyWalk1/");
     playSequence(argv[1]);
 
 
     cerr<<"[INFO] exit now...\n";
     return EXIT_SUCCESS;
-
 }
