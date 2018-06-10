@@ -198,14 +198,14 @@ Point2i UndistortPixel(Point2i point)
 }
 
 /** perspective projection of a 3D point to a 2D pixel*/
-Point2i project3DPoint(Mat vert)
+Point2f project3DPoint(Mat vert)
 {
     float cx = ROBONECT_CAMERA_CX;
     float cy = ROBONECT_CAMERA_CY;
     float fx = ROBONECT_CAMERA_FX;
     float fy = ROBONECT_CAMERA_FY;
 
-    Point2i  pixel;
+    Point2f  pixel;
     pixel.x = fx * vert.at<float>(0, 0) / vert.at<float>(2, 0) + cx;
     pixel.y = fy * vert.at<float>(1, 0) / vert.at<float>(2, 0) + cy;
     return pixel;
@@ -376,8 +376,35 @@ void displayPose(Markers& marker, cv::Mat& image, const cv::Mat& transformation)
         cv::circle(image, pixel, 5,  Scalar( 0, 255, 0 ), 1, 8);
     }
 
-    cv::imshow("image", image);
+json generateJSON(std::vector<vec3f>& pts, const cv::Mat& transformation, int indexImage)
+{
+    std::vector<std::string> joints = {"torso", "head", "leftShoulder", "leftElbow", "leftHand", "rightShoulder",
+     "rightElbow", "rightHand", "neck", "leftHip", "leftKnee", "leftFoot", "rightHip", "rightKnee", "rightFoot"};
 
+    json skeleton = {
+        {"frameNumber", indexImage},
+        {"score", 0.0},
+        {"keypoints", json::array()}
+    };
+
+    for(int i = 0; i < pts.size();i++)
+    {
+        if(pts[i].exists())
+            continue;
+        Mat pt = vec3fToOpencv(pts[i]);
+        Mat transformedPt = transformation * pt;
+        Point2f pixel = project3DPoint(transformedPt);
+        json keypoint = {
+                    {"position",{
+                        {"x", pixel.x},
+                        {"y", pixel.y}
+                    }},
+                    {"partName",joints[i]},
+                    {"score", 0.0}
+                }; 
+        skeleton["keypoints"][i] = keypoint;
+    }
+    return skeleton;
 }
 
 /** returns the transformation matrix between the qualisys and the kinect camera. it is a 4x4 homogeneous matrix (unit in meters)*/
@@ -418,6 +445,9 @@ int playSequence(const std::string &path)
     double index;
     ifstream gt;
     string groundTruthFileName = path + "/groundTruth.txt";
+    json skeletonsData = json::array();
+    ofstream myfile;
+    myfile.open(path+"/json/example.txt");
 
     setlocale(LC_NUMERIC, "C");
     gt.open((groundTruthFileName).c_str());
@@ -465,7 +495,9 @@ int playSequence(const std::string &path)
         gt.getline(line, 1024);
         setlocale(LC_NUMERIC, "C");
         scanMarkerFromString(marker, index, line);
-        displayPose(marker, rgb_indDisplay, transformationMatrix);
+        json skeleton;
+        skeleton = generateJSON(pts ,transformationMatrix, indexImage);
+        skeletonsData[indexImage] = skeleton;
 
         char key = cv::waitKey(20);
 
@@ -477,7 +509,8 @@ int playSequence(const std::string &path)
         indexImage++;
 
     }
-
+    myfile << skeletonsData.dump(4);
+    myfile.close();
     cerr<<"[SUCCESS] finished playing '"<<path<<"' sequence."<<endl;
     return 0;
 }
