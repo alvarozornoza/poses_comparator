@@ -17,6 +17,10 @@ formatter = logging.Formatter('[%(asctime)s] [%(name)s] [%(levelname)s] %(messag
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+# Dependencies for data export
+from exportData import produceSkeletonData
+import os
+import json
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='tf-pose-estimation run')
