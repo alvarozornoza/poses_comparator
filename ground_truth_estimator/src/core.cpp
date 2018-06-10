@@ -90,7 +90,7 @@ struct vec3f
     }
     bool exists()
     {
-        return (((this->x)>0.0) && ((this->y)>0.0) && ((this->z)>0.0));
+        return (((this->x)!=0.0) && ((this->y)!=0.0) && ((this->z)!=0.0));
     }
 
     float length()
@@ -391,7 +391,7 @@ void ptsPushBack(Markers& marker, std::vector<vec3f>& pts)
     @param transformation the transformation matrix that project the marker positions from the Qualisys coordinate system to the camera coordinate system (obtained by rigid calibration)
     */
 
-void displayPose(std::vector<vec3f>& pts, cv::Mat& image, const cv::Mat& transformation)
+void displayPose(std::vector<vec3f> pts, cv::Mat& image, const cv::Mat& transformation)
 {
     int connectedJointIndices[14][2];
     getIndexes(connectedJointIndices);
@@ -429,7 +429,7 @@ void displayPose(std::vector<vec3f>& pts, cv::Mat& image, const cv::Mat& transfo
     cv::imshow("image", image);
 }
 
-json generateJSON(std::vector<vec3f>& pts, const cv::Mat& transformation, int indexImage)
+json generateJSON(std::vector<vec3f> pts, const cv::Mat& transformation, int indexImage)
 {
     std::vector<std::string> joints = {"torso", "head", "leftShoulder", "leftElbow", "leftHand", "rightShoulder",
      "rightElbow", "rightHand", "neck", "leftHip", "leftKnee", "leftFoot", "rightHip", "rightKnee", "rightFoot"};
@@ -442,7 +442,7 @@ json generateJSON(std::vector<vec3f>& pts, const cv::Mat& transformation, int in
 
     for(int i = 0; i < pts.size();i++)
     {
-        if(pts[i].exists())
+        if(!pts[i].exists())
             continue;
         Mat pt = vec3fToOpencv(pts[i]);
         Mat transformedPt = transformation * pt;
@@ -554,6 +554,8 @@ int playSequence(const std::string &path)
         json skeleton;
         skeleton = generateJSON(pts ,transformationMatrix, indexImage);
         skeletonsData[indexImage] = skeleton;
+
+        std::cout<<skeleton.dump(4);
 
         char key = cv::waitKey(20);
 
