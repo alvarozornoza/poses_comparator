@@ -7,11 +7,13 @@
 //
 
 #include "FakeKinectDriver.h"
+#include <nlohmann/json.hpp>
 
 
 using namespace std;
 using namespace cv;
 
+using json = nlohmann::json;
 
 /** @brief camera intrinsics params*/
 
