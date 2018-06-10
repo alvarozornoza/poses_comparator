@@ -1,0 +1,25 @@
+# poses_comparator
+
+## ground_truth_estimator
+
+### Build
+
+$ mkdir build
+$ cd build 
+$ cmake ..
+$ make
+
+Do not forget include following lines in build/CMakeCache.txt
+
+//Flags used by the compiler during all build types.
+CMAKE_CXX_FLAGS:STRING=-std=c++11
+
+### Run
+
+$ cd build
+$ ./skViewer "route to dataset"
+
+
+
+
+
