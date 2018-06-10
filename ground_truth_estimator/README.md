@@ -20,8 +20,10 @@ CMAKE_CXX_FLAGS:STRING=-std=c++11
 
 ### Run
 
+```bash
 $ cd build
 $ ./skViewer "route to dataset"
+```
 
 
 
