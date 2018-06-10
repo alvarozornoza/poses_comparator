@@ -499,7 +499,7 @@ int playSequence(const std::string &path)
     string groundTruthFileName = path + "/groundTruth.txt";
     json skeletonsData = json::array();
     ofstream myfile;
-    myfile.open(path+"/json/example.txt");
+    myfile.open(path+"/json/groundTruth.txt");
 
     setlocale(LC_NUMERIC, "C");
     gt.open((groundTruthFileName).c_str());
