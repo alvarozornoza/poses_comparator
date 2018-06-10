@@ -7,7 +7,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 
-from tf_pose import common
+import common
 
 DEFAULT_PADDING = 'SAME'
 
