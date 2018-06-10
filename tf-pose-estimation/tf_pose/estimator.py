@@ -114,6 +114,8 @@ class PoseEstimator:
 
             for part_idx in range(18):
                 c_idx = int(pafprocess.get_part_cid(human_id, part_idx))
+                #aux = pafprocess.get_part_score(c_idx)
+                #if c_idx < 0 and aux < 0.2:
                 if c_idx < 0:
                     continue
 
