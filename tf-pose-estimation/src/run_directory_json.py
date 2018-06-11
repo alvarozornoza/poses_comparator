@@ -67,7 +67,7 @@ if __name__ == '__main__':
         image = TfPoseEstimator.draw_humans(image, humans, imgcopy=False)
         cv2.imshow('tf-pose-estimation result', image)
 
-        skeleton = produceSkeletonData(i,humans)
+        skeleton = produceSkeletonData(i,humans,image)
         skeletonsData.append(skeleton)
         #print(json.dumps(produceSkeletonData(i,humans),indent=4, separators=(',', ': ')))
 
