@@ -14,3 +14,9 @@ python3 run_directory_json.py --model=mobilenet_thin --folder=../../dataset/
 cd ground_truth_estimator/build
 ./skViewer ../../dataset/
 ```
+### comparator
+
+```bash
+cd comparator
+python2 comparator.py
+```

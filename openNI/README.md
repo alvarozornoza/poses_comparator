@@ -1,3 +1,0 @@
-# poses_comparator
-
-## openNI

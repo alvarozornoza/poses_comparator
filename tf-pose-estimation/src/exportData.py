@@ -18,8 +18,8 @@ def produceSkeletonData(frameNumber, humans, image):
                 body_part = human.body_parts[i]
                 keypoint = {
                     "position":{
-                        "x": body_part.x * image_w + 0.5,
-                        "y": body_part.y * image_h + 0.5
+                        "x": body_part.x * image_w,
+                        "y": body_part.y * image_h 
                     },
                     "partName":CocoPart(body_part.part_idx).name,
                     "score": body_part.score
