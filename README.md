@@ -1,5 +1,9 @@
 # poses_comparator
 
+Álvaro Serra Gómez & Álvaro Zornoza Uña. UPC (2018)
+
+Human pose estimation: RGB-D cameras vs Deep-Learning algorithm
+
 ## Run
 
 ### open-pose
